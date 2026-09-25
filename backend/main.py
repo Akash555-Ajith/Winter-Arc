@@ -1,5 +1,6 @@
 import json
 import uuid
+import sqlite3
 from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import FastAPI, HTTPException
@@ -48,6 +49,7 @@ def calculate_level_from_xp(total_xp: int):
 
 def calculate_global_streaks(conn):
     """Calculates global streak based on unique completed protocol days."""
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     cursor.execute("SELECT id FROM tasks")
     task_rows = cursor.fetchall()
@@ -69,6 +71,9 @@ def calculate_global_streaks(conn):
     return {"current_streak": current_streak, "longest_streak": longest_streak}
 
 def recalculate_streaks(conn):
+    global_streaks = calculate_global_streaks(conn)
+    current_global = global_streaks["current_streak"]
+
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM tasks")
     tasks = cursor.fetchall()
@@ -77,7 +82,9 @@ def recalculate_streaks(conn):
         task_id = task["id"]
         cursor.execute("SELECT COUNT(DISTINCT date) as cnt FROM daily_logs WHERE task_id = ? AND completed = 1", (task_id,))
         row = cursor.fetchone()
-        streak = row["cnt"] if row else 0
+        task_cnt = row["cnt"] if row else 0
+
+        streak = max(current_global, task_cnt)
         max_streak = max(task["longest_streak"], streak)
 
         cursor.execute("UPDATE tasks SET current_streak = ?, longest_streak = ? WHERE id = ?", (streak, max_streak, task_id))
