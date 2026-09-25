@@ -45,6 +45,17 @@ def init_db():
         )
     ''')
 
+    # Photos Table (Transformation Log)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS photos (
+            id TEXT PRIMARY KEY,
+            date TEXT NOT NULL,
+            image_data TEXT NOT NULL,
+            notes TEXT DEFAULT '',
+            created_at TEXT NOT NULL
+        )
+    ''')
+
     # User Progress Table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS user_progress (

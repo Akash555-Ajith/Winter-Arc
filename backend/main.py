@@ -1,17 +1,17 @@
 import json
 import uuid
 from datetime import datetime, timedelta
+from typing import Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from database import init_db, get_db
 from models import (
-    TaskCreate, TaskResponse, ToggleLogRequest,
-    WeightCreate, WeightResponse, UserProgressResponse, BackupData
+    TaskCreate, ToggleLogRequest,
+    WeightCreate, PhotoCreate, UserProgressResponse, BackupData
 )
 
-app = FastAPI(title="Winter Arc Tactical API", version="1.0.0")
+app = FastAPI(title="Winter Arc Tactical API", version="1.1.0")
 
-# CORS middleware for React frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -46,6 +46,54 @@ def calculate_level_from_xp(total_xp: int):
         "xp_required": xp_for_level(level)
     }
 
+def calculate_global_streaks(conn):
+    """Calculates global streak: consecutive days where 100% of tasks were completed."""
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM tasks")
+    task_rows = cursor.fetchall()
+    if not task_rows:
+        return {"current_streak": 0, "longest_streak": 0}
+
+    total_task_count = len(task_rows)
+
+    cursor.execute("SELECT date, COUNT(*) as done_cnt FROM daily_logs WHERE completed = 1 GROUP BY date")
+    date_done_map = {row["date"]: row["done_cnt"] for row in cursor.fetchall()}
+
+    now = datetime.now()
+    today_str = now.strftime("%Y-%m-%d")
+
+    current_streak = 0
+    longest_streak = 0
+    check_date = now
+
+    # Check starting yesterday if today isn't 100% completed yet
+    if date_done_map.get(today_str, 0) < total_task_count:
+        check_date = now - timedelta(days=1)
+
+    while True:
+        d_str = check_date.strftime("%Y-%m-%d")
+        if date_done_map.get(d_str, 0) >= total_task_count:
+            current_streak += 1
+            check_date -= timedelta(days=1)
+        else:
+            break
+
+    # Calculate longest global streak over all recorded history
+    all_dates = sorted(list(date_done_map.keys()))
+    temp_streak = 0
+    for d_str in all_dates:
+        if date_done_map[d_str] >= total_task_count:
+            temp_streak += 1
+            if temp_streak > longest_streak:
+                longest_streak = temp_streak
+        else:
+            temp_streak = 0
+
+    if current_streak > longest_streak:
+        longest_streak = current_streak
+
+    return {"current_streak": current_streak, "longest_streak": longest_streak}
+
 def recalculate_streaks(conn):
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM tasks")
@@ -63,7 +111,6 @@ def recalculate_streaks(conn):
         max_streak = task["longest_streak"]
         check_date = now
 
-        # If not completed today, check starting yesterday
         if logs.get(today_str) != 1:
             check_date = now - timedelta(days=1)
 
@@ -91,6 +138,8 @@ def check_and_unlock_badges(conn):
     new_unlocked = list(badges)
     changed = False
 
+    global_streaks = calculate_global_streaks(conn)
+
     # Check 1: First Task
     if "first_task" not in new_unlocked:
         cursor.execute("SELECT COUNT(*) as cnt FROM daily_logs WHERE completed = 1")
@@ -100,15 +149,13 @@ def check_and_unlock_badges(conn):
 
     # Check 2: 7-Day Streak
     if "streak_7" not in new_unlocked:
-        cursor.execute("SELECT COUNT(*) as cnt FROM tasks WHERE current_streak >= 7 OR longest_streak >= 7")
-        if cursor.fetchone()["cnt"] > 0:
+        if global_streaks["current_streak"] >= 7 or global_streaks["longest_streak"] >= 7:
             new_unlocked.append("streak_7")
             changed = True
 
     # Check 3: 30-Day Streak
     if "streak_30" not in new_unlocked:
-        cursor.execute("SELECT COUNT(*) as cnt FROM tasks WHERE current_streak >= 30 OR longest_streak >= 30")
-        if cursor.fetchone()["cnt"] > 0:
+        if global_streaks["current_streak"] >= 30 or global_streaks["longest_streak"] >= 30:
             new_unlocked.append("streak_30")
             changed = True
 
@@ -204,18 +251,25 @@ def toggle_log(req: ToggleLogRequest):
     streak = task["current_streak"] if task else 0
     streak_bonus = min(streak, 10)
 
+    # Check Perfect Day bonus (+25 XP)
+    cursor.execute("SELECT COUNT(*) as cnt FROM tasks")
+    total_tasks = cursor.fetchone()["cnt"]
+    cursor.execute("SELECT COUNT(*) as cnt FROM daily_logs WHERE date = ? AND completed = 1", (req.date,))
+    completed_today = cursor.fetchone()["cnt"]
+
+    perfect_day_bonus = 25 if (completed_today >= total_tasks and total_tasks > 0) else 0
+
     # XP Update
     cursor.execute("SELECT total_xp, current_level FROM user_progress WHERE id = 'main'")
     prog = cursor.fetchone()
     total_xp = prog["total_xp"]
     old_level = prog["current_level"]
 
-    xp_change = (10 + streak_bonus) if new_completed == 1 else -(10 + streak_bonus)
+    xp_change = (10 + streak_bonus + perfect_day_bonus) if new_completed == 1 else -(10 + streak_bonus)
     new_total_xp = max(0, total_xp + xp_change)
 
     calc = calculate_level_from_xp(new_total_xp)
     new_level = calc["level"]
-
     level_up = new_level > old_level
 
     cursor.execute("UPDATE user_progress SET total_xp = ?, current_level = ? WHERE id = 'main'", (new_total_xp, new_level))
@@ -264,12 +318,48 @@ def delete_weight(entry_id: str):
     conn.close()
     return {"status": "success"}
 
+# --- Photos API Routes (Transformation Log) ---
+
+@app.get("/api/photos")
+def get_photos():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM photos ORDER BY date DESC")
+    photos = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return photos
+
+@app.post("/api/photos")
+def upload_photo(photo: PhotoCreate):
+    conn = get_db()
+    cursor = conn.cursor()
+    photo_id = str(uuid.uuid4())[:8]
+    created_at = datetime.now().isoformat()
+    cursor.execute(
+        "INSERT INTO photos (id, date, image_data, notes, created_at) VALUES (?, ?, ?, ?, ?)",
+        (photo_id, photo.date, photo.image_data, photo.notes or "", created_at)
+    )
+    conn.commit()
+    conn.close()
+    return {"id": photo_id, "date": photo.date, "notes": photo.notes or "", "created_at": created_at}
+
+@app.delete("/api/photos/{photo_id}")
+def delete_photo(photo_id: str):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM photos WHERE id = ?", (photo_id,))
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
+
 @app.get("/api/progress", response_model=UserProgressResponse)
 def get_progress():
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM user_progress WHERE id = 'main'")
     row = cursor.fetchone()
+
+    global_streaks = calculate_global_streaks(conn)
     conn.close()
 
     total_xp = row["total_xp"]
@@ -281,6 +371,8 @@ def get_progress():
         "current_level": calc["level"],
         "xp_in_level": calc["xp_in_level"],
         "xp_required_for_level": calc["xp_required"],
+        "global_streak": global_streaks["current_streak"],
+        "longest_global_streak": global_streaks["longest_streak"],
         "badges_unlocked": badges
     }
 
@@ -339,6 +431,9 @@ def export_data():
     cursor.execute("SELECT * FROM weight_entries")
     weights = [dict(row) for row in cursor.fetchall()]
 
+    cursor.execute("SELECT * FROM photos")
+    photos = [dict(row) for row in cursor.fetchall()]
+
     cursor.execute("SELECT * FROM user_progress WHERE id = 'main'")
     prog = dict(cursor.fetchone())
     prog["badges_unlocked"] = json.loads(prog["badges_unlocked"])
@@ -350,6 +445,7 @@ def export_data():
         "tasks": tasks,
         "dailyLogs": logs,
         "weightEntries": weights,
+        "photos": photos,
         "userProgress": prog
     }
 
@@ -361,6 +457,7 @@ def import_data(data: BackupData):
     cursor.execute("DELETE FROM tasks")
     cursor.execute("DELETE FROM daily_logs")
     cursor.execute("DELETE FROM weight_entries")
+    cursor.execute("DELETE FROM photos")
 
     for t in data.tasks:
         cursor.execute(
@@ -379,6 +476,13 @@ def import_data(data: BackupData):
             "INSERT INTO weight_entries (id, date, weight_kg) VALUES (?, ?, ?)",
             (w["id"], w["date"], w["weight_kg"])
         )
+
+    if data.photos:
+        for p in data.photos:
+            cursor.execute(
+                "INSERT INTO photos (id, date, image_data, notes, created_at) VALUES (?, ?, ?, ?, ?)",
+                (p["id"], p["date"], p["image_data"], p.get("notes", ""), p.get("created_at", datetime.now().isoformat()))
+            )
 
     p = data.userProgress
     badges_str = json.dumps(p.get("badges_unlocked", []))

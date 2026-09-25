@@ -3,6 +3,7 @@ import {
   fetchTasks, createTask, deleteTask,
   fetchLogs, toggleTaskLog,
   fetchWeightEntries, addWeightEntry, deleteWeightEntry,
+  fetchPhotos, uploadPhoto, deletePhoto,
   fetchUserProgress
 } from './services/api';
 
@@ -10,24 +11,27 @@ import HeaderHud from './components/HeaderHud';
 import RoutineMatrix from './components/RoutineMatrix';
 import HeatmapGrid from './components/HeatmapGrid';
 import WeightTracker from './components/WeightTracker';
+import StreakPage from './components/StreakPage';
+import PhotoGallery from './components/PhotoGallery';
 import BadgesGrid from './components/BadgesGrid';
 import RecapReport from './components/RecapReport';
 import LevelUpModal from './components/LevelUpModal';
 import SettingsModal from './components/SettingsModal';
 
 import {
-  LayoutDashboard, Dumbbell, ShieldCheck, BarChart3,
-  Award, Settings, UserCheck, Calendar
+  LayoutDashboard, Flame, Dumbbell, Camera, ShieldCheck,
+  BarChart3, Award, Settings, UserCheck
 } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('command'); // 'command', 'training', 'discipline', 'analytics', 'badges'
+  const [activeTab, setActiveTab] = useState('command');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Data states
   const [tasks, setTasks] = useState([]);
   const [logs, setLogs] = useState([]);
   const [weightEntries, setWeightEntries] = useState([]);
+  const [photos, setPhotos] = useState([]);
   const [progress, setProgress] = useState(null);
 
   // Modal states
@@ -40,15 +44,17 @@ export default function App() {
 
   const loadAllData = async () => {
     try {
-      const [tList, lList, wList, pData] = await Promise.all([
+      const [tList, lList, wList, pList, pData] = await Promise.all([
         fetchTasks(),
         fetchLogs(selectedDate),
         fetchWeightEntries(),
+        fetchPhotos(),
         fetchUserProgress(),
       ]);
       setTasks(tList);
       setLogs(lList);
       setWeightEntries(wList);
+      setPhotos(pList);
       setProgress(pData);
     } catch (e) {
       console.error('Data load error:', e);
@@ -97,6 +103,24 @@ export default function App() {
   const handleDeleteWeight = async (id) => {
     try {
       await deleteWeightEntry(id);
+      loadAllData();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleUploadPhoto = async (date, imageData, notes) => {
+    try {
+      await uploadPhoto(date, imageData, notes);
+      loadAllData();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleDeletePhoto = async (id) => {
+    try {
+      await deletePhoto(id);
       loadAllData();
     } catch (e) {
       console.error(e);
@@ -152,6 +176,18 @@ export default function App() {
             </button>
 
             <button
+              onClick={() => setActiveTab('streak')}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded transition-all ${
+                activeTab === 'streak'
+                  ? 'bg-cyan-hud/15 text-cyan-hud font-bold border-l-2 border-cyan-hud'
+                  : 'text-silver-tactical hover:text-frost-white hover:bg-deck-light'
+              }`}
+            >
+              <Flame className="w-4 h-4 text-gold-xp" />
+              <span>STREAK PROTOCOL</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('training')}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded transition-all ${
                 activeTab === 'training'
@@ -161,6 +197,18 @@ export default function App() {
             >
               <Dumbbell className="w-4 h-4" />
               <span>TRAINING & GYM</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('photos')}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded transition-all ${
+                activeTab === 'photos'
+                  ? 'bg-cyan-hud/15 text-cyan-hud font-bold border-l-2 border-cyan-hud'
+                  : 'text-silver-tactical hover:text-frost-white hover:bg-deck-light'
+              }`}
+            >
+              <Camera className="w-4 h-4" />
+              <span>TRANSFORMATION LOG</span>
             </button>
 
             <button
@@ -242,12 +290,12 @@ export default function App() {
           </button>
         </div>
 
-        {/* Top Header HUD */}
-        <HeaderHud progress={progress} />
-
         {/* Tab View Switching */}
         {activeTab === 'command' && (
           <>
+            {/* Header HUD with XP Bar prominently displayed on Command Center */}
+            <HeaderHud progress={progress} />
+
             <RoutineMatrix
               tasks={tasks}
               logs={logs}
@@ -260,11 +308,23 @@ export default function App() {
           </>
         )}
 
+        {activeTab === 'streak' && (
+          <StreakPage progress={progress} tasks={tasks} logs={logs} />
+        )}
+
         {activeTab === 'training' && (
           <WeightTracker
             entries={weightEntries}
             onAddWeight={handleAddWeight}
             onDeleteWeight={handleDeleteWeight}
+          />
+        )}
+
+        {activeTab === 'photos' && (
+          <PhotoGallery
+            photos={photos}
+            onUploadPhoto={handleUploadPhoto}
+            onDeletePhoto={handleDeletePhoto}
           />
         )}
 

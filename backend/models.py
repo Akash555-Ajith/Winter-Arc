@@ -26,11 +26,25 @@ class WeightResponse(BaseModel):
     date: str
     weight_kg: float
 
+class PhotoCreate(BaseModel):
+    date: str  # YYYY-MM-DD
+    image_data: str  # base64 data URI
+    notes: Optional[str] = ""
+
+class PhotoResponse(BaseModel):
+    id: str
+    date: str
+    image_data: str
+    notes: str
+    created_at: str
+
 class UserProgressResponse(BaseModel):
     total_xp: int
     current_level: int
     xp_in_level: int
     xp_required_for_level: int
+    global_streak: int
+    longest_global_streak: int
     badges_unlocked: List[str]
 
 class BackupData(BaseModel):
@@ -39,4 +53,5 @@ class BackupData(BaseModel):
     tasks: List[dict]
     dailyLogs: List[dict]
     weightEntries: List[dict]
+    photos: Optional[List[dict]] = []
     userProgress: dict

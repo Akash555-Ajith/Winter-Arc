@@ -65,6 +65,30 @@ export async function deleteWeightEntry(entryId) {
   return res.json();
 }
 
+export async function fetchPhotos() {
+  const res = await fetch(`${API_BASE}/photos`);
+  if (!res.ok) throw new Error('Failed to fetch photos');
+  return res.json();
+}
+
+export async function uploadPhoto(date, imageData, notes = '') {
+  const res = await fetch(`${API_BASE}/photos`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ date, image_data: imageData, notes }),
+  });
+  if (!res.ok) throw new Error('Failed to upload photo');
+  return res.json();
+}
+
+export async function deletePhoto(photoId) {
+  const res = await fetch(`${API_BASE}/photos/${photoId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Failed to delete photo');
+  return res.json();
+}
+
 export async function fetchUserProgress() {
   const res = await fetch(`${API_BASE}/progress`);
   if (!res.ok) throw new Error('Failed to fetch user progress');
