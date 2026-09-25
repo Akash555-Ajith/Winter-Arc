@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .hud-border {
+    border: 1px solid rgba(0, 240, 255, 0.2);
+  }
+  .hud-border-glow {
+    border: 1px solid rgba(0, 240, 255, 0.4);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
+  }
+  .hud-card {
+    background-color: #0d121f;
+    border: 1px solid rgba(0, 240, 255, 0.15);
+    border-radius: 0.5rem;
+  }
+}
+
+/* Custom Tactical Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080c14;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #141b2d;
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00a3b4;
+}
