@@ -29,15 +29,20 @@ export default function StreakPage({ progress, tasks, logs }) {
 
   const totalTaskCount = (tasks && tasks.length) || 1;
 
-  const sortedCompletedDates = Array.from(
-    new Set(
-      (logs || [])
-        .filter((l) => l.completed === 1)
-        .map((l) => l.date)
-    )
-  ).sort();
+  // Group completed logs by date
+  const logsCountPerDate = (logs || []).reduce((acc, log) => {
+    if (log.completed === 1) {
+      acc[log.date] = (acc[log.date] || 0) + 1;
+    }
+    return acc;
+  }, {});
 
-  const totalCompletedDays = sortedCompletedDates.length;
+  // Get all unique dates where ALL active tasks were completed (100% Perfect Day)
+  const perfectCompletedDates = Object.keys(logsCountPerDate)
+    .filter((date) => logsCountPerDate[date] >= totalTaskCount)
+    .sort();
+
+  const totalCompletedDays = perfectCompletedDates.length;
   const currentActiveProtocolDay = totalCompletedDays + 1;
 
   // Build 90 Protocol Days (Day 1 to Day 90) sequentially
@@ -46,7 +51,7 @@ export default function StreakPage({ progress, tasks, logs }) {
     const isCompleted = dayNum <= totalCompletedDays;
     const isToday = dayNum === currentActiveProtocolDay;
     const isFuture = dayNum > currentActiveProtocolDay;
-    const dateAssigned = isCompleted ? sortedCompletedDates[dayNum - 1] : null;
+    const dateAssigned = isCompleted ? perfectCompletedDates[dayNum - 1] : null;
 
     protocolDays.push({
       dayNum,
@@ -55,7 +60,7 @@ export default function StreakPage({ progress, tasks, logs }) {
       isPartial: false,
       isToday,
       isFuture,
-      doneCount: isCompleted ? (tasks.length || 1) : 0,
+      doneCount: isCompleted ? totalTaskCount : 0,
     });
   }
 

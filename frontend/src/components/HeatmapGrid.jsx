@@ -3,17 +3,22 @@ import { Activity } from 'lucide-react';
 
 export default function HeatmapGrid({ logs, tasks }) {
   const totalDays = 90; // 90-Day Winter Arc Protocol Grid
+  const totalTaskCount = (tasks && tasks.length) || 1;
 
-  // Get all unique dates where tasks were completed, sorted chronologically
-  const sortedCompletedDates = Array.from(
-    new Set(
-      (logs || [])
-        .filter((l) => l.completed === 1)
-        .map((l) => l.date)
-    )
-  ).sort();
+  // Group completed logs by date
+  const logsCountPerDate = (logs || []).reduce((acc, log) => {
+    if (log.completed === 1) {
+      acc[log.date] = (acc[log.date] || 0) + 1;
+    }
+    return acc;
+  }, {});
 
-  const totalCompletedDays = sortedCompletedDates.length;
+  // Get all unique dates where ALL active tasks were completed (100% Strike Completion)
+  const perfectCompletedDates = Object.keys(logsCountPerDate)
+    .filter((date) => logsCountPerDate[date] >= totalTaskCount)
+    .sort();
+
+  const totalCompletedDays = perfectCompletedDates.length;
   const currentActiveProtocolDay = totalCompletedDays + 1;
 
   // Generate 90 Protocol Days (Day 1 to Day 90) sequentially
@@ -22,7 +27,7 @@ export default function HeatmapGrid({ logs, tasks }) {
     const isCompleted = dayNum <= totalCompletedDays;
     const isToday = dayNum === currentActiveProtocolDay;
     const isFuture = dayNum > currentActiveProtocolDay;
-    const dateAssigned = isCompleted ? sortedCompletedDates[dayNum - 1] : null;
+    const dateAssigned = isCompleted ? perfectCompletedDates[dayNum - 1] : null;
 
     gridCells.push({
       dayNum,
@@ -63,9 +68,9 @@ export default function HeatmapGrid({ logs, tasks }) {
           <div
             key={cell.dayNum}
             title={`Protocol Day ${cell.dayNum}${
-              cell.dateAssigned ? ` (Logged: ${cell.dateAssigned})` : ''
+              cell.dateAssigned ? ` (100% Cleared: ${cell.dateAssigned})` : ''
             }: ${
-              cell.isCompleted ? 'COMPLETED' : cell.isToday ? 'CURRENT ACTIVE DAY' : 'FUTURE'
+              cell.isCompleted ? 'COMPLETED (100%)' : cell.isToday ? 'IN PROGRESS' : 'FUTURE'
             }`}
             className={`h-9 rounded flex flex-col items-center justify-center text-[10px] font-mono transition-all ${
               cell.isToday
@@ -82,7 +87,7 @@ export default function HeatmapGrid({ logs, tasks }) {
       </div>
 
       <div className="flex justify-between items-center text-[11px] font-mono text-silver-tactical pt-3 border-t border-cyan-hud/10">
-        <span>COMPLETED: {totalCompletedDays} / 90 DAYS</span>
+        <span>100% CLEARED: {totalCompletedDays} / 90 DAYS</span>
         <span className="text-cyan-hud font-bold">CURRENT PROTOCOL STAGE: DAY {currentActiveProtocolDay} / 90</span>
         <span>TARGET: DAY 90 APEX</span>
       </div>
