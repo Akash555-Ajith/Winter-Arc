@@ -293,7 +293,6 @@ export default function App() {
         {/* Tab View Switching */}
         {activeTab === 'command' && (
           <>
-            {/* Header HUD with XP Bar prominently displayed on Command Center */}
             <HeaderHud progress={progress} />
 
             <RoutineMatrix
@@ -304,7 +303,7 @@ export default function App() {
               onCreateTask={handleCreateTask}
               onDeleteTask={handleDeleteTask}
             />
-            <HeatmapGrid logs={logs} />
+            <HeatmapGrid logs={logs} tasks={tasks} />
           </>
         )}
 

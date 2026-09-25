@@ -1,9 +1,23 @@
 import React from 'react';
-import { Flame, Trophy, Calendar, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Flame, Trophy, Calendar, CheckCircle2 } from 'lucide-react';
 
 export default function StreakPage({ progress, tasks, logs }) {
   const globalStreak = progress?.global_streak || 0;
   const longestGlobalStreak = progress?.longest_global_streak || 0;
+
+  const totalDays = 90;
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+
+  // Determine Day 1 Start Date
+  let startDateStr = todayStr;
+  if (tasks && tasks.length > 0) {
+    const createdDates = tasks.map((t) => t.created_date).filter(Boolean).sort();
+    if (createdDates.length > 0) {
+      startDateStr = createdDates[0];
+    }
+  }
+  const startDate = new Date(startDateStr);
 
   // Build log map per date
   const logsPerDate = (logs || []).reduce((acc, log) => {
@@ -15,23 +29,31 @@ export default function StreakPage({ progress, tasks, logs }) {
 
   const totalTaskCount = tasks.length || 1;
 
-  // Build 90-day calendar days
-  const now = new Date();
-  const calendarDays = [];
-  for (let i = 89; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(now.getDate() - i);
-    const dateStr = d.toISOString().split('T')[0];
-    const doneCount = logsPerDate[dateStr] || 0;
+  // Calculate elapsed protocol day for today (1-indexed)
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const todayDiffDays = Math.floor((new Date(todayStr) - startDate) / msPerDay);
+  const currentProtocolDay = Math.max(1, todayDiffDays + 1);
+
+  // Build 90 Protocol Days (Day 1 to Day 90)
+  const protocolDays = [];
+  for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
+    const cellDate = new Date(startDate);
+    cellDate.setDate(startDate.getDate() + (dayNum - 1));
+    const cellDateStr = cellDate.toISOString().split('T')[0];
+
+    const doneCount = logsPerDate[cellDateStr] || 0;
     const isPerfect = doneCount >= totalTaskCount && totalTaskCount > 0;
     const isPartial = doneCount > 0 && doneCount < totalTaskCount;
+    const isToday = dayNum === currentProtocolDay;
+    const isFuture = dayNum > currentProtocolDay;
 
-    calendarDays.push({
-      dateStr,
-      dayNum: d.getDate(),
-      month: d.toLocaleString('default', { month: 'short' }),
+    protocolDays.push({
+      dayNum,
+      dateStr: cellDateStr,
       isPerfect,
       isPartial,
+      isToday,
+      isFuture,
       doneCount,
     });
   }
@@ -89,12 +111,12 @@ export default function StreakPage({ progress, tasks, logs }) {
         </div>
       </div>
 
-      {/* 90-Day Global Streak Calendar */}
+      {/* 90-Day Global Streak Calendar Grid */}
       <div className="bg-deck hud-border rounded-xl p-6">
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-cyan-hud/15">
           <h3 className="text-base font-bold font-mono text-frost-white uppercase tracking-wider flex items-center gap-2">
             <Calendar className="w-4 h-4 text-cyan-hud" />
-            90-DAY UNBROKEN STREAK MATRIX
+            90-DAY UNBROKEN STREAK MATRIX (DAY 1 - 90)
           </h3>
           <div className="flex items-center gap-3 text-xs font-mono text-silver-tactical">
             <span className="flex items-center gap-1">
@@ -110,19 +132,26 @@ export default function StreakPage({ progress, tasks, logs }) {
         </div>
 
         <div className="grid grid-cols-10 sm:grid-cols-15 gap-2">
-          {calendarDays.map((day, idx) => (
+          {protocolDays.map((day) => (
             <div
-              key={idx}
-              title={`${day.dateStr}: ${day.doneCount}/${totalTaskCount} Tasks Done`}
+              key={day.dayNum}
+              title={`Day ${day.dayNum} (${day.dateStr}): ${day.doneCount}/${totalTaskCount} Tasks Completed`}
               className={`h-9 rounded flex flex-col items-center justify-center text-[10px] font-mono transition-all ${
-                day.isPerfect
+                day.isToday
+                  ? day.isPerfect
+                    ? 'bg-green-cyber text-obsidian font-black shadow-hud-glow border-2 border-frost-white'
+                    : 'bg-cyan-hud/20 text-cyan-hud font-black border-2 border-cyan-hud shadow-hud-glow animate-pulse'
+                  : day.isPerfect
                   ? 'bg-green-cyber text-obsidian font-bold shadow-hud-glow'
                   : day.isPartial
                   ? 'bg-cyan-hud/40 text-frost-white border border-cyan-hud/50'
-                  : 'bg-deck-light border border-cyan-hud/10 text-silver-tactical/50'
+                  : day.isFuture
+                  ? 'bg-deck-light/30 border border-cyan-hud/5 text-silver-tactical/30'
+                  : 'bg-deck-light border border-cyan-hud/15 text-silver-tactical/50'
               }`}
             >
-              <span>{day.dayNum}</span>
+              <span className="text-[9px] opacity-60">DAY</span>
+              <span className="font-extrabold text-[11px]">{day.dayNum}</span>
             </div>
           ))}
         </div>
