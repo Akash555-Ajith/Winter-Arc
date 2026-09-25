@@ -37,19 +37,31 @@ export default function RoutineMatrix({
   };
 
   const handlePrevDay = () => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() - 1);
-    onSelectDate(d.toISOString().split('T')[0]);
+    const [y, m, d] = selectedDate.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    dateObj.setDate(dateObj.getDate() - 1);
+    const yyyy = dateObj.getFullYear();
+    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const dd = String(dateObj.getDate()).padStart(2, '0');
+    onSelectDate(`${yyyy}-${mm}-${dd}`);
   };
 
   const handleNextDay = () => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() + 1);
-    onSelectDate(d.toISOString().split('T')[0]);
+    const [y, m, d] = selectedDate.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    dateObj.setDate(dateObj.getDate() + 1);
+    const yyyy = dateObj.getFullYear();
+    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const dd = String(dateObj.getDate()).padStart(2, '0');
+    onSelectDate(`${yyyy}-${mm}-${dd}`);
   };
 
   const handleToday = () => {
-    onSelectDate(new Date().toISOString().split('T')[0]);
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    onSelectDate(`${yyyy}-${mm}-${dd}`);
   };
 
   return (
@@ -150,25 +162,18 @@ export default function RoutineMatrix({
                 100% PERFECT DAY PROTOCOL CLEARED! (+25 BONUS XP)
               </div>
               <div className="text-[11px] font-sans text-silver-tactical">
-                All daily tasks completed! Your level & EXP bar are saved. Ready to complete tasks again for the next day?
+                All daily tasks completed! Advance to the next day to complete your habits again and build your streak.
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2 font-mono text-xs">
             <button
-              onClick={() => {
-                onResetDailyChecklist(selectedDate);
-              }}
-              className="px-3 py-1.5 bg-green-cyber text-obsidian font-bold rounded hover:bg-cyan-hud transition-all shadow-md"
-            >
-              ↻ RESET CHECKLIST (NEW DAY)
-            </button>
-            <button
               onClick={handleNextDay}
-              className="px-3 py-1.5 bg-deck-light border border-cyan-hud/40 text-cyan-hud font-bold rounded hover:bg-cyan-hud/20 transition-all"
+              className="px-4 py-2 bg-green-cyber text-obsidian font-black rounded hover:bg-cyan-hud transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
             >
-              NEXT DAY ►
+              <span>CONTINUE TO NEXT DAY</span>
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
