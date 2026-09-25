@@ -254,6 +254,15 @@ def get_logs(date: Optional[str] = None):
     conn.close()
     return logs
 
+@app.post("/api/logs/reset-date")
+def reset_date_logs(date: str):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM daily_logs WHERE date = ?", (date,))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "message": f"Daily checklist reset for date {date}"}
+
 @app.post("/api/logs/toggle")
 def toggle_log(req: ToggleLogRequest):
     conn = get_db()

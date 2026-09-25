@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   fetchTasks, createTask, deleteTask,
-  fetchLogs, toggleTaskLog,
+  fetchLogs, toggleTaskLog, resetDateLogs,
   fetchWeightEntries, addWeightEntry, deleteWeightEntry,
   fetchPhotos, uploadPhoto, deletePhoto,
   fetchUserProgress
@@ -88,6 +88,15 @@ export default function App() {
       loadAllData();
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleResetDailyChecklist = async (dateToReset = selectedDate) => {
+    try {
+      await resetDateLogs(dateToReset);
+      await loadAllData();
+    } catch (e) {
+      console.error('Reset daily checklist error:', e);
     }
   };
 
@@ -301,9 +310,11 @@ export default function App() {
               tasks={tasks}
               logs={logs}
               selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
               onToggleTask={handleToggleTask}
               onCreateTask={handleCreateTask}
               onDeleteTask={handleDeleteTask}
+              onResetDailyChecklist={handleResetDailyChecklist}
             />
             <HeatmapGrid logs={logs} tasks={tasks} />
           </>
@@ -334,9 +345,11 @@ export default function App() {
             tasks={tasks}
             logs={logs}
             selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
             onToggleTask={handleToggleTask}
             onCreateTask={handleCreateTask}
             onDeleteTask={handleDeleteTask}
+            onResetDailyChecklist={handleResetDailyChecklist}
           />
         )}
 

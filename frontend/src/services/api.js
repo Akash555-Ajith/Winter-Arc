@@ -41,6 +41,14 @@ export async function toggleTaskLog(taskId, date) {
   return res.json();
 }
 
+export async function resetDateLogs(date) {
+  const res = await fetch(`${API_BASE}/logs/reset-date?date=${date}`, {
+    method: 'POST',
+  });
+  if (!res.ok) throw new Error('Failed to reset daily checklist');
+  return res.json();
+}
+
 export async function fetchWeightEntries() {
   const res = await fetch(`${API_BASE}/weight`);
   if (!res.ok) throw new Error('Failed to fetch weight entries');
