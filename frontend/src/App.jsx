@@ -46,7 +46,7 @@ export default function App() {
     try {
       const [tList, lList, wList, pList, pData] = await Promise.all([
         fetchTasks(),
-        fetchLogs(selectedDate),
+        fetchLogs(), // Fetch all historical logs across all dates
         fetchWeightEntries(),
         fetchPhotos(),
         fetchUserProgress(),
@@ -308,7 +308,7 @@ export default function App() {
 
             <RoutineMatrix
               tasks={tasks}
-              logs={logs}
+              logs={(logs || []).filter((l) => l.date === selectedDate)}
               selectedDate={selectedDate}
               onSelectDate={setSelectedDate}
               onToggleTask={handleToggleTask}
@@ -343,7 +343,7 @@ export default function App() {
         {activeTab === 'discipline' && (
           <RoutineMatrix
             tasks={tasks}
-            logs={logs}
+            logs={(logs || []).filter((l) => l.date === selectedDate)}
             selectedDate={selectedDate}
             onSelectDate={setSelectedDate}
             onToggleTask={handleToggleTask}

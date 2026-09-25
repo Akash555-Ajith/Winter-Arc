@@ -27,6 +27,8 @@ export default function StreakPage({ progress, tasks, logs }) {
     return acc;
   }, {});
 
+  const totalTaskCount = (tasks && tasks.length) || 1;
+
   const sortedCompletedDates = Array.from(
     new Set(
       (logs || [])
