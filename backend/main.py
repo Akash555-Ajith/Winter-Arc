@@ -10,7 +10,7 @@ from models import (
     WeightCreate, PhotoCreate, UserProgressResponse, BackupData
 )
 
-app = FastAPI(title="Winter Arc Tactical API", version="1.1.0")
+app = FastAPI(title="Winter Arc Tactical API", version="1.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -66,7 +66,6 @@ def calculate_global_streaks(conn):
     longest_streak = 0
     check_date = now
 
-    # Check starting yesterday if today isn't 100% completed yet
     if date_done_map.get(today_str, 0) < total_task_count:
         check_date = now - timedelta(days=1)
 
@@ -78,7 +77,6 @@ def calculate_global_streaks(conn):
         else:
             break
 
-    # Calculate longest global streak over all recorded history
     all_dates = sorted(list(date_done_map.keys()))
     temp_streak = 0
     for d_str in all_dates:
@@ -139,42 +137,69 @@ def check_and_unlock_badges(conn):
     changed = False
 
     global_streaks = calculate_global_streaks(conn)
-
-    # Check 1: First Task
-    if "first_task" not in new_unlocked:
-        cursor.execute("SELECT COUNT(*) as cnt FROM daily_logs WHERE completed = 1")
-        if cursor.fetchone()["cnt"] > 0:
-            new_unlocked.append("first_task")
-            changed = True
-
-    # Check 2: 7-Day Streak
-    if "streak_7" not in new_unlocked:
-        if global_streaks["current_streak"] >= 7 or global_streaks["longest_streak"] >= 7:
-            new_unlocked.append("streak_7")
-            changed = True
-
-    # Check 3: 30-Day Streak
-    if "streak_30" not in new_unlocked:
-        if global_streaks["current_streak"] >= 30 or global_streaks["longest_streak"] >= 30:
-            new_unlocked.append("streak_30")
-            changed = True
-
-    # Check 4: Level 10
+    best_streak = max(global_streaks["current_streak"], global_streaks["longest_streak"])
     calc = calculate_level_from_xp(total_xp)
-    if "level_10" not in new_unlocked and calc["level"] >= 10:
+    current_level = calc["level"]
+
+    # 12 New Achievements List & Rules:
+    # 1. 1-day streak
+    if "streak_1" not in new_unlocked and best_streak >= 1:
+        new_unlocked.append("streak_1")
+        changed = True
+
+    # 2. 10-day streak
+    if "streak_10" not in new_unlocked and best_streak >= 10:
+        new_unlocked.append("streak_10")
+        changed = True
+
+    # 3. 30-day streak
+    if "streak_30" not in new_unlocked and best_streak >= 30:
+        new_unlocked.append("streak_30")
+        changed = True
+
+    # 4. 50-day streak
+    if "streak_50" not in new_unlocked and best_streak >= 50:
+        new_unlocked.append("streak_50")
+        changed = True
+
+    # 5. 70-day streak
+    if "streak_70" not in new_unlocked and best_streak >= 70:
+        new_unlocked.append("streak_70")
+        changed = True
+
+    # 6. 90-day streak
+    if "streak_90" not in new_unlocked and best_streak >= 90:
+        new_unlocked.append("streak_90")
+        changed = True
+
+    # 7. Level 2
+    if "level_2" not in new_unlocked and current_level >= 2:
+        new_unlocked.append("level_2")
+        changed = True
+
+    # 8. Level 10
+    if "level_10" not in new_unlocked and current_level >= 10:
         new_unlocked.append("level_10")
         changed = True
 
-    # Check 5: 10 Weight Logs
-    if "weight_10" not in new_unlocked:
-        cursor.execute("SELECT COUNT(*) as cnt FROM weight_entries")
-        if cursor.fetchone()["cnt"] >= 10:
-            new_unlocked.append("weight_10")
-            changed = True
+    # 9. Level 25
+    if "level_25" not in new_unlocked and current_level >= 25:
+        new_unlocked.append("level_25")
+        changed = True
 
-    # Check 6: 1000 XP
-    if "xp_1000" not in new_unlocked and total_xp >= 1000:
-        new_unlocked.append("xp_1000")
+    # 10. Level 50
+    if "level_50" not in new_unlocked and current_level >= 50:
+        new_unlocked.append("level_50")
+        changed = True
+
+    # 11. Level 75
+    if "level_75" not in new_unlocked and current_level >= 75:
+        new_unlocked.append("level_75")
+        changed = True
+
+    # 12. Level 100
+    if "level_100" not in new_unlocked and current_level >= 100:
+        new_unlocked.append("level_100")
         changed = True
 
     if changed:
@@ -245,13 +270,11 @@ def toggle_log(req: ToggleLogRequest):
     else:
         cursor.execute("INSERT INTO daily_logs (id, task_id, date, completed) VALUES (?, ?, ?, 1)", (log_id, req.task_id, req.date))
 
-    # Fetch task streak for bonus XP calculation
     cursor.execute("SELECT current_streak FROM tasks WHERE id = ?", (req.task_id,))
     task = cursor.fetchone()
     streak = task["current_streak"] if task else 0
     streak_bonus = min(streak, 10)
 
-    # Check Perfect Day bonus (+25 XP)
     cursor.execute("SELECT COUNT(*) as cnt FROM tasks")
     total_tasks = cursor.fetchone()["cnt"]
     cursor.execute("SELECT COUNT(*) as cnt FROM daily_logs WHERE date = ? AND completed = 1", (req.date,))
@@ -259,7 +282,6 @@ def toggle_log(req: ToggleLogRequest):
 
     perfect_day_bonus = 25 if (completed_today >= total_tasks and total_tasks > 0) else 0
 
-    # XP Update
     cursor.execute("SELECT total_xp, current_level FROM user_progress WHERE id = 'main'")
     prog = cursor.fetchone()
     total_xp = prog["total_xp"]
@@ -318,8 +340,6 @@ def delete_weight(entry_id: str):
     conn.close()
     return {"status": "success"}
 
-# --- Photos API Routes (Transformation Log) ---
-
 @app.get("/api/photos")
 def get_photos():
     conn = get_db()
@@ -356,6 +376,7 @@ def delete_photo(photo_id: str):
 def get_progress():
     conn = get_db()
     cursor = conn.cursor()
+    check_and_unlock_badges(conn)
     cursor.execute("SELECT * FROM user_progress WHERE id = 'main'")
     row = cursor.fetchone()
 

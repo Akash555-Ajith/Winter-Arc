@@ -1,14 +1,22 @@
 import React from 'react';
-import { ShieldCheck, Lock, Award } from 'lucide-react';
+import { Lock, Award } from 'lucide-react';
 
 const BADGES_CATALOG = [
-  { id: 'first_task', title: 'IRON WILL PROTOCOL', desc: '30-day perfect adherence streak unlocked.', icon: '❄️' },
-  { id: 'streak_7', title: 'STRIKE FORCE 7', desc: 'Maintain 7 consecutive days of discipline.', icon: '🔥' },
-  { id: 'streak_30', title: 'UNSTOPPABLE APEX', desc: '30-day unbroken tactical routine execution.', icon: '🏆' },
-  { id: 'perfect_week', title: 'PERFECT WEEK MATRIX', desc: '100% task clearance 7 days straight.', icon: '⭐' },
-  { id: 'level_10', title: 'CENTURY TITAN', desc: 'Reach Level 10 discipline benchmark.', icon: '🏔️' },
-  { id: 'weight_10', title: 'TRACKING TITAN', desc: 'Log 10 kinetic telemetry weight entries.', icon: '⚖️' },
-  { id: 'xp_1000', title: 'WINTER CHAMPION', desc: 'Accumulate 1,000 total protocol XP.', icon: '🌨️' },
+  // Streak Milestones
+  { id: 'streak_1', title: '1-DAY INITIATION', desc: 'Complete a 1-day unbroken protocol streak.', icon: '⚡' },
+  { id: 'streak_10', title: '10-DAY STRIKE FORCE', desc: 'Complete a 10-day unbroken protocol streak.', icon: '🔥' },
+  { id: 'streak_30', title: '30-DAY IRON ADHERENCE', desc: 'Complete a 30-day unbroken protocol streak.', icon: '🏆' },
+  { id: 'streak_50', title: '50-DAY HALF-WAY APEX', desc: 'Complete a 50-day unbroken protocol streak.', icon: '🏔️' },
+  { id: 'streak_70', title: '70-DAY TITAN FORTITUDE', desc: 'Complete a 70-day unbroken protocol streak.', icon: '🛡️' },
+  { id: 'streak_90', title: '90-DAY WINTER CHAMPION', desc: 'Complete a full 90-day unbroken Winter Arc streak.', icon: '❄️' },
+
+  // Level Milestones
+  { id: 'level_2', title: 'ASCENSION (LEVEL 2)', desc: 'Reach Level 2 discipline rank.', icon: '🌟' },
+  { id: 'level_10', title: 'VETERAN (LEVEL 10)', desc: 'Reach Level 10 discipline rank.', icon: '⚔️' },
+  { id: 'level_25', title: 'COMMANDER (LEVEL 25)', desc: 'Reach Level 25 discipline rank.', icon: '🎖️' },
+  { id: 'level_50', title: 'WARLORD (LEVEL 50)', desc: 'Reach Level 50 discipline rank.', icon: '👑' },
+  { id: 'level_75', title: 'OVERLORD (LEVEL 75)', desc: 'Reach Level 75 discipline rank.', icon: '💎' },
+  { id: 'level_100', title: 'IMMORTAL TITAN (LEVEL 100)', desc: 'Reach Level 100 apex discipline rank.', icon: '🌌' },
 ];
 
 export default function BadgesGrid({ unlockedBadges = [] }) {

@@ -21,7 +21,7 @@ A full-stack, gamified cross-platform Web Application for daily habit tracking, 
 ### **2. 🔥 Streak Protocol Page**
 - **Global Unbroken Streak**: A day counts towards your global streak when **100% of all active routines on that date are completed** ("Perfect Day").
 - **Streak Records**: Displays active Global Streak and All-Time Longest Global Streak records.
-- **90-Day Streak Grid**: Interactive 90-day calendar matrix highlighting unbroken 100% days vs partial/missed days.
+- **Day 1 - 90 Matrix**: 90-day sequential protocol grid highlighting unbroken 100% days vs partial/missed days.
 - **Per-Habit Breakdown**: Detailed streak statistics table for each individual routine.
 
 ### **3. 📸 Physical Transformation Log**
@@ -40,8 +40,20 @@ A full-stack, gamified cross-platform Web Application for daily habit tracking, 
 - Interactive line graph powered by **Recharts** (`7D`, `30D`, `ALL TIME` filters).
 - Net weight change summary statistics.
 
-### **6. 🏆 Milestone Honor Codes & Badges**
-- Achievement showcase grid unlocking badges for key milestones (*Iron Will Protocol*, *Strike Force 7*, *Unstoppable Apex*, *Century Titan*, *Winter Champion*).
+### **6. 🏆 12 Honor Code Milestones & Achievements**
+Unlocked automatically as the user reaches specific streak and level stages:
+- **1-Day Streak**: `1-DAY INITIATION`
+- **10-Day Streak**: `10-DAY STRIKE FORCE`
+- **30-Day Streak**: `30-DAY IRON ADHERENCE`
+- **50-Day Streak**: `50-DAY HALF-WAY APEX`
+- **70-Day Streak**: `70-DAY TITAN FORTITUDE`
+- **90-Day Streak**: `90-DAY WINTER CHAMPION`
+- **Level 2**: `ASCENSION (LEVEL 2)`
+- **Level 10**: `VETERAN (LEVEL 10)`
+- **Level 25**: `COMMANDER (LEVEL 25)`
+- **Level 50**: `WARLORD (LEVEL 50)`
+- **Level 75**: `OVERLORD (LEVEL 75)`
+- **Level 100**: `IMMORTAL TITAN (LEVEL 100)`
 
 ### **7. 📊 Periodic Debrief & Report Card**
 - Auto-generated performance report cards awarding grades (`S Tier ❄️`, `A Tier 🔥`, `B Tier ⭐`, `C Tier`) based on completion rates over 7-day or 30-day windows.
@@ -131,7 +143,7 @@ FastAPI provides automatic interactive API documentation accessible when running
 | `/api/logs/toggle` | `POST` | Toggle task completion and process XP / level-up logic |
 | `/api/weight` | `GET` / `POST` | Fetch or record kinetic weight entries |
 | `/api/photos` | `GET` / `POST` / `DELETE` | Manage physical transformation progress photos |
-| `/api/progress` | `GET` | Get total XP, level rank, and unbroken global streak stats |
+| `/api/progress` | `GET` | Get total XP, level rank, global streak, and 12 achievements status |
 | `/api/recap` | `GET` | Calculate report card grade and performance metrics |
 | `/api/export` | `GET` | Export entire database to JSON backup |
 | `/api/import` | `POST` | Restore database from JSON backup file |
