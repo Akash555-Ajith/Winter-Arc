@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { Scale, TrendingUp, Plus, Trash2 } from 'lucide-react';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, LabelList } from 'recharts';
+import { Scale, TrendingUp, Plus, Trash2, Calendar } from 'lucide-react';
 
 export default function WeightTracker({ entries, onAddWeight, onDeleteWeight }) {
   const [unit, setUnit] = useState('kg'); // 'kg' or 'lbs'
@@ -13,7 +13,7 @@ export default function WeightTracker({ entries, onAddWeight, onDeleteWeight }) 
     return unit === 'lbs' ? (valKg * 2.20462).toFixed(1) : valKg.toFixed(1);
   };
 
-  // Filter entries
+  // Filter entries based on days filter
   const now = new Date();
   const filteredEntries = entries.filter((e) => {
     if (daysFilter === 0) return true; // All
@@ -27,7 +27,9 @@ export default function WeightTracker({ entries, onAddWeight, onDeleteWeight }) 
     date: e.date.substring(5), // MM-DD
     fullDate: e.date,
     weight: parseFloat(convertWeight(e.weight_kg)),
+    labelStr: `${convertWeight(e.weight_kg)} ${unit}`,
     rawKg: e.weight_kg,
+    id: e.id,
   }));
 
   // Net change
@@ -42,7 +44,6 @@ export default function WeightTracker({ entries, onAddWeight, onDeleteWeight }) 
     e.preventDefault();
     const val = parseFloat(weightInput);
     if (!isNaN(val) && val > 0) {
-      // If user is in lbs mode, convert to kg for API
       const valKg = unit === 'lbs' ? val / 2.20462 : val;
       onAddWeight(dateInput, valKg);
       setWeightInput('');
@@ -51,6 +52,7 @@ export default function WeightTracker({ entries, onAddWeight, onDeleteWeight }) 
 
   return (
     <div className="bg-deck hud-border rounded-xl p-5 mb-6">
+      {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 mb-4 border-b border-cyan-hud/15">
         <div>
           <div className="flex items-center gap-2 text-xs font-mono text-cyan-hud">
@@ -119,17 +121,23 @@ export default function WeightTracker({ entries, onAddWeight, onDeleteWeight }) 
         </div>
       </div>
 
-      {/* Recharts Velocity Line Chart */}
-      <div className="h-64 w-full mb-6">
+      {/* Recharts Velocity Line Chart with On-Point Weight Labels */}
+      <div className="h-72 w-full mb-6">
         {chartData.length === 0 ? (
           <div className="h-full flex items-center justify-center text-xs font-mono text-silver-tactical">
             NO KINETIC DATA LOGGED YET. LOG YOUR WEIGHT BELOW.
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+            <LineChart data={chartData} margin={{ top: 25, right: 30, left: 10, bottom: 25 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0, 240, 255, 0.1)" />
-              <XAxis dataKey="date" stroke="#8d99ae" fontSize={11} tickLine={false} />
+              <XAxis
+                dataKey="date"
+                stroke="#8d99ae"
+                fontSize={11}
+                tickLine={false}
+                dy={10}
+              />
               <YAxis stroke="#8d99ae" fontSize={11} domain={['auto', 'auto']} tickLine={false} />
               <Tooltip
                 contentStyle={{
@@ -146,16 +154,26 @@ export default function WeightTracker({ entries, onAddWeight, onDeleteWeight }) 
                 dataKey="weight"
                 stroke="#00f0ff"
                 strokeWidth={3}
-                dot={{ fill: '#00f0ff', r: 4 }}
-                activeDot={{ r: 6, fill: '#ffd700', stroke: '#080c14', strokeWidth: 2 }}
-              />
+                dot={{ fill: '#00f0ff', r: 5 }}
+                activeDot={{ r: 7, fill: '#ffd700', stroke: '#080c14', strokeWidth: 2 }}
+              >
+                {/* Display weight directly above each data point on the graph */}
+                <LabelList
+                  dataKey="labelStr"
+                  position="top"
+                  fill="#00f0ff"
+                  fontSize={11}
+                  fontWeight="bold"
+                  offset={10}
+                />
+              </Line>
             </LineChart>
           </ResponsiveContainer>
         )}
       </div>
 
-      {/* Add Weight Entry Form */}
-      <form onSubmit={handleAdd} className="flex flex-wrap items-center gap-3 pt-4 border-t border-cyan-hud/15">
+      {/* Record Weight Form */}
+      <form onSubmit={handleAdd} className="flex flex-wrap items-center gap-3 pt-4 border-t border-cyan-hud/15 mb-6">
         <div className="flex-1 min-w-[140px]">
           <input
             type="number"
@@ -186,6 +204,55 @@ export default function WeightTracker({ entries, onAddWeight, onDeleteWeight }) 
           RECORD WEIGHT
         </button>
       </form>
+
+      {/* Date-by-Date Weight Telemetry Cards Below Graph */}
+      <div>
+        <h3 className="text-xs font-mono font-bold text-silver-tactical uppercase tracking-wider mb-3 flex items-center gap-2">
+          <Calendar className="w-3.5 h-3.5 text-cyan-hud" />
+          DATE-BY-DATE WEIGHT BREAKDOWN
+        </h3>
+
+        {entries.length === 0 ? (
+          <div className="text-xs font-mono text-silver-tactical text-center py-4">
+            NO LOGGED ENTRIES
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[...entries].reverse().map((entry, idx) => {
+              const displayVal = convertWeight(entry.weight_kg);
+
+              return (
+                <div
+                  key={entry.id}
+                  className="bg-deck-light border border-cyan-hud/15 hover:border-cyan-hud/40 rounded-lg p-3 flex items-center justify-between transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-cyan-hud/10 text-cyan-hud rounded border border-cyan-hud/20">
+                      <Scale className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-[11px] font-mono text-silver-tactical">
+                        {entry.date}
+                      </div>
+                      <div className="text-sm font-bold font-mono text-frost-white">
+                        {displayVal} <span className="text-xs text-cyan-hud">{unit}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => onDeleteWeight(entry.id)}
+                    className="text-silver-tactical hover:text-danger-cyber p-1 transition-colors"
+                    title="Delete Entry"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
