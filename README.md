@@ -7,23 +7,48 @@
 [![Python](https://img.shields.io/badge/Language-Python_3.14-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![SQLite](https://img.shields.io/badge/Database-SQLite-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 
-A full-stack, gamified cross-platform Web Application for daily habit tracking, kinetic weight telemetry, streak heatmaps, and Pokémon-style XP level progression. Designed with a **Tactical Cyberpunk Frost HUD** visual aesthetic inspired by sci-fi military command interfaces.
+A full-stack, gamified cross-platform Web Application for daily habit tracking, kinetic weight telemetry, streak heatmaps, physical transformation photo logs, and Pokémon-style XP level progression. Designed with a **Tactical Cyberpunk Frost HUD** visual aesthetic inspired by military command interfaces.
 
 ---
 
-## ⚡ Key Features
+## ⚡ Key Features & Navigation Modules
 
-- **🕹️ Command Center HUD**: Real-time telemetry status (`STRIKE RATE: 98.4%`), Day 42/90 progress indicators, and rank status (`TITAN PROTOCOL`).
-- **🛡️ Non-Negotiable Routine Matrix**: Zero-tolerance daily habit checklist with category badges (*Fitness*, *Mindset*, *Discipline*, *Nutrition*) and interactive completion toggles (`CLEARED`, `ENGAGED`).
-- **🔥 84-Day Arc Consistency Heatmap**: 84-day (12-week) GitHub-style grid contribution heatmap tracking long-term consistency.
-- **⚡ Pokémon-Style XP & Level-Up System**:
-  - **Leveling Formula**: $\text{xpForLevel}(\text{level}) = \text{level}^2 \times 50$.
-  - **Rewards**: +10 XP per habit completed, +25 XP bonus for a "Perfect Day", streak multipliers.
-  - **Level-Up Celebration**: Smooth animated progress bar with confetti cannon modal popup upon reaching new level thresholds.
-- **⚖️ Kinetic Weight Telemetry & Velocity Curve**: Daily weight logger form with `kg` / `lbs` unit conversion and interactive line graph powered by **Recharts** (`7D`, `30D`, `ALL TIME` filters).
-- **🏆 Milestone Honor Codes & Badges**: Achievement showcase grid unlocking badges for key milestones (*Iron Will Protocol*, *Strike Force 7*, *Unstoppable Apex*, *Century Titan*, *Winter Champion*).
-- **📊 Periodic Debrief & Report Card**: Auto-generated performance report cards awarding grades (`S Tier ❄️`, `A Tier 🔥`, `B Tier ⭐`, `C Tier`) based on completion rates over 7-day or 30-day windows.
-- **⚙️ Settings & Local Backup**: Configurable daily evening notification reminders and one-click **JSON Export & Import** for full data backup and restore.
+### **1. 🕹️ Command Center HUD**
+- **Routine Matrix**: Zero-tolerance daily habit checklist with category badges (*Fitness*, *Mindset*, *Discipline*, *Nutrition*) and interactive checkmarks (`CLEARED`, `ENGAGED`).
+- **Date Selector & Task Creation**: Easily pick any date (Today or historical) and add custom routine protocols.
+- **Embedded XP Header**: Integrated rank badge (`TITAN PROTOCOL | LVL X`), total XP counter, day counter (e.g. `DAY 42 / 90`), and telemetry status.
+
+### **2. 🔥 Streak Protocol Page**
+- **Global Unbroken Streak**: A day counts towards your global streak when **100% of all active routines on that date are completed** ("Perfect Day").
+- **Streak Records**: Displays active Global Streak and All-Time Longest Global Streak records.
+- **90-Day Streak Grid**: Interactive 90-day calendar matrix highlighting unbroken 100% days vs partial/missed days.
+- **Per-Habit Breakdown**: Detailed streak statistics table for each individual routine.
+
+### **3. 📸 Physical Transformation Log**
+- **Date-Specific Photo Uploads**: Upload progress photos for specific dates with optional benchmark notes.
+- **Timeline Gallery Grid**: Visually inspect physical conditioning and physique milestones over time.
+- **Side-by-Side Comparison Tool**: Select any Photo A (e.g., Day 1 Baseline) vs Photo B (e.g., Today) for a visual side-by-side transformation review.
+
+### **4. ⚡ Pokémon-Style XP & Level-Up System**
+- **Leveling Formula**: $\text{xpForLevel}(\text{level}) = \text{level}^2 \times 50$ (Level 1: 50 XP, Level 2: 200 XP, Level 5: 1250 XP).
+- **Rewards**: +10 XP per task completed, +25 XP bonus for a "Perfect Day", streak multipliers.
+- **Smooth Animation Sequence**: 800ms smooth fill animation (`easeOut`) that fills to 100% -> pulse flashes -> resets to 0% -> triggers a snappy celebration modal with **canvas-confetti**.
+- **Multi-Level Queue**: Smoothly handles multiple consecutive level-ups from a single XP gain.
+
+### **5. ⚖️ Kinetic Weight Telemetry & Velocity Curve**
+- Daily weight logger form with `kg` / `lbs` unit conversion.
+- Interactive line graph powered by **Recharts** (`7D`, `30D`, `ALL TIME` filters).
+- Net weight change summary statistics.
+
+### **6. 🏆 Milestone Honor Codes & Badges**
+- Achievement showcase grid unlocking badges for key milestones (*Iron Will Protocol*, *Strike Force 7*, *Unstoppable Apex*, *Century Titan*, *Winter Champion*).
+
+### **7. 📊 Periodic Debrief & Report Card**
+- Auto-generated performance report cards awarding grades (`S Tier ❄️`, `A Tier 🔥`, `B Tier ⭐`, `C Tier`) based on completion rates over 7-day or 30-day windows.
+
+### **8. ⚙️ Settings & Local Backup**
+- Configurable daily evening notification reminders.
+- One-click **JSON Export & Import** for full data backup and restore.
 
 ---
 
@@ -105,7 +130,8 @@ FastAPI provides automatic interactive API documentation accessible when running
 | `/api/logs` | `GET` | Fetch daily completion logs |
 | `/api/logs/toggle` | `POST` | Toggle task completion and process XP / level-up logic |
 | `/api/weight` | `GET` / `POST` | Fetch or record kinetic weight entries |
-| `/api/progress` | `GET` | Get total XP, current level, and unlocked badges |
+| `/api/photos` | `GET` / `POST` / `DELETE` | Manage physical transformation progress photos |
+| `/api/progress` | `GET` | Get total XP, level rank, and unbroken global streak stats |
 | `/api/recap` | `GET` | Calculate report card grade and performance metrics |
 | `/api/export` | `GET` | Export entire database to JSON backup |
 | `/api/import` | `POST` | Restore database from JSON backup file |
