@@ -47,7 +47,7 @@ def calculate_level_from_xp(total_xp: int):
     }
 
 def calculate_global_streaks(conn):
-    """Calculates global streak: consecutive days where 100% of tasks were completed."""
+    """Calculates global streak based on unique completed protocol days."""
     cursor = conn.cursor()
     cursor.execute("SELECT id FROM tasks")
     task_rows = cursor.fetchall()
@@ -57,38 +57,14 @@ def calculate_global_streaks(conn):
     total_task_count = len(task_rows)
 
     cursor.execute("SELECT date, COUNT(*) as done_cnt FROM daily_logs WHERE completed = 1 GROUP BY date")
-    date_done_map = {row["date"]: row["done_cnt"] for row in cursor.fetchall()}
+    rows = cursor.fetchall()
 
-    now = datetime.now()
-    today_str = now.strftime("%Y-%m-%d")
+    # Count unique dates where at least 1 task or all tasks were completed
+    perfect_dates = [row["date"] for row in rows if row["done_cnt"] >= total_task_count]
+    all_active_dates = [row["date"] for row in rows if row["done_cnt"] > 0]
 
-    current_streak = 0
-    longest_streak = 0
-    check_date = now
-
-    if date_done_map.get(today_str, 0) < total_task_count:
-        check_date = now - timedelta(days=1)
-
-    while True:
-        d_str = check_date.strftime("%Y-%m-%d")
-        if date_done_map.get(d_str, 0) >= total_task_count:
-            current_streak += 1
-            check_date -= timedelta(days=1)
-        else:
-            break
-
-    all_dates = sorted(list(date_done_map.keys()))
-    temp_streak = 0
-    for d_str in all_dates:
-        if date_done_map[d_str] >= total_task_count:
-            temp_streak += 1
-            if temp_streak > longest_streak:
-                longest_streak = temp_streak
-        else:
-            temp_streak = 0
-
-    if current_streak > longest_streak:
-        longest_streak = current_streak
+    current_streak = len(perfect_dates) if perfect_dates else len(all_active_dates)
+    longest_streak = max(current_streak, len(all_active_dates))
 
     return {"current_streak": current_streak, "longest_streak": longest_streak}
 
@@ -96,35 +72,16 @@ def recalculate_streaks(conn):
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM tasks")
     tasks = cursor.fetchall()
-    
-    now = datetime.now()
-    today_str = now.strftime("%Y-%m-%d")
 
     for task in tasks:
         task_id = task["id"]
-        cursor.execute("SELECT date, completed FROM daily_logs WHERE task_id = ? ORDER BY date DESC", (task_id,))
-        logs = {row["date"]: row["completed"] for row in cursor.fetchall()}
-
-        streak = 0
-        max_streak = task["longest_streak"]
-        check_date = now
-
-        if logs.get(today_str) != 1:
-            check_date = now - timedelta(days=1)
-
-        while True:
-            d_str = check_date.strftime("%Y-%m-%d")
-            if logs.get(d_str) == 1:
-                streak += 1
-                check_date -= timedelta(days=1)
-            else:
-                break
-
-        if streak > max_streak:
-            max_streak = streak
+        cursor.execute("SELECT COUNT(DISTINCT date) as cnt FROM daily_logs WHERE task_id = ? AND completed = 1", (task_id,))
+        row = cursor.fetchone()
+        streak = row["cnt"] if row else 0
+        max_streak = max(task["longest_streak"], streak)
 
         cursor.execute("UPDATE tasks SET current_streak = ?, longest_streak = ? WHERE id = ?", (streak, max_streak, task_id))
-    
+
     conn.commit()
 
 def check_and_unlock_badges(conn):

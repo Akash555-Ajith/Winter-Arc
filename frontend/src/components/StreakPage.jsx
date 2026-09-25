@@ -27,34 +27,33 @@ export default function StreakPage({ progress, tasks, logs }) {
     return acc;
   }, {});
 
-  const totalTaskCount = tasks.length || 1;
+  const sortedCompletedDates = Array.from(
+    new Set(
+      (logs || [])
+        .filter((l) => l.completed === 1)
+        .map((l) => l.date)
+    )
+  ).sort();
 
-  // Calculate elapsed protocol day for today (1-indexed)
-  const msPerDay = 1000 * 60 * 60 * 24;
-  const todayDiffDays = Math.floor((new Date(todayStr) - startDate) / msPerDay);
-  const currentProtocolDay = Math.max(1, todayDiffDays + 1);
+  const totalCompletedDays = sortedCompletedDates.length;
+  const currentActiveProtocolDay = totalCompletedDays + 1;
 
-  // Build 90 Protocol Days (Day 1 to Day 90)
+  // Build 90 Protocol Days (Day 1 to Day 90) sequentially
   const protocolDays = [];
   for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
-    const cellDate = new Date(startDate);
-    cellDate.setDate(startDate.getDate() + (dayNum - 1));
-    const cellDateStr = cellDate.toISOString().split('T')[0];
-
-    const doneCount = logsPerDate[cellDateStr] || 0;
-    const isPerfect = doneCount >= totalTaskCount && totalTaskCount > 0;
-    const isPartial = doneCount > 0 && doneCount < totalTaskCount;
-    const isToday = dayNum === currentProtocolDay;
-    const isFuture = dayNum > currentProtocolDay;
+    const isCompleted = dayNum <= totalCompletedDays;
+    const isToday = dayNum === currentActiveProtocolDay;
+    const isFuture = dayNum > currentActiveProtocolDay;
+    const dateAssigned = isCompleted ? sortedCompletedDates[dayNum - 1] : null;
 
     protocolDays.push({
       dayNum,
-      dateStr: cellDateStr,
-      isPerfect,
-      isPartial,
+      dateStr: dateAssigned || '',
+      isPerfect: isCompleted,
+      isPartial: false,
       isToday,
       isFuture,
-      doneCount,
+      doneCount: isCompleted ? (tasks.length || 1) : 0,
     });
   }
 
