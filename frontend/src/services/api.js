@@ -116,3 +116,11 @@ export async function importDataJson(backupObject) {
   if (!res.ok) throw new Error('Failed to import data');
   return res.json();
 }
+
+export async function resetAllData() {
+  const res = await fetch(`${API_BASE}/reset`, {
+    method: 'POST',
+  });
+  if (!res.ok) throw new Error('Failed to reset all data');
+  return res.json();
+}

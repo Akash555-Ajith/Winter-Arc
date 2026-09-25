@@ -126,6 +126,34 @@ export default function SettingsModal({ isOpen, onClose, onRefreshData }) {
               </label>
             </div>
           </div>
+
+          {/* Hard Reset System */}
+          <div className="p-4 bg-red-950/20 border border-red-500/30 rounded-lg">
+            <h4 className="text-sm font-bold font-mono text-red-400 uppercase mb-2 flex items-center gap-2">
+              <span>⚠️</span> RESET PROTOCOL & DATA WIPE
+            </h4>
+            <p className="text-xs text-silver-tactical mb-4">
+              Purger all tasks, daily logs, weight entries, and reset progress for <strong className="text-frost-white">Akash Ajith</strong>.
+            </p>
+
+            <button
+              onClick={async () => {
+                if (window.confirm("Are you sure you want to remove all tasks and reset everything for Akash Ajith?")) {
+                  try {
+                    const { resetAllData } = await import('../services/api');
+                    await resetAllData();
+                    setStatusMsg("SYSTEM RESET COMPLETE! OPERATOR: AKASH AJITH");
+                    if (onRefreshData) onRefreshData();
+                  } catch (err) {
+                    setStatusMsg("RESET FAILED: " + err.message);
+                  }
+                }
+              }}
+              className="px-4 py-2 bg-red-500/20 border border-red-500/50 hover:bg-red-500/30 text-red-400 font-mono text-xs font-bold rounded transition-all"
+            >
+              ⊕ RESET ALL DATA (START FRESH)
+            </button>
+          </div>
         </div>
 
         <div className="mt-6 pt-4 border-t border-cyan-hud/15 text-center text-[10px] font-mono text-silver-tactical">

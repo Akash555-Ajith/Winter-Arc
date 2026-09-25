@@ -60,11 +60,17 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS user_progress (
             id TEXT PRIMARY KEY,
+            user_name TEXT DEFAULT 'Akash Ajith',
             total_xp INTEGER DEFAULT 0,
             current_level INTEGER DEFAULT 1,
             badges_unlocked TEXT DEFAULT '[]'
         )
     ''')
+
+    try:
+        cursor.execute("ALTER TABLE user_progress ADD COLUMN user_name TEXT DEFAULT 'Akash Ajith'")
+    except Exception:
+        pass
 
     conn.commit()
 
@@ -72,24 +78,7 @@ def init_db():
     cursor.execute("SELECT COUNT(*) as cnt FROM user_progress")
     if cursor.fetchone()["cnt"] == 0:
         cursor.execute(
-            "INSERT INTO user_progress (id, total_xp, current_level, badges_unlocked) VALUES ('main', 0, 1, '[]')"
-        )
-        conn.commit()
-
-    # Seed Default Tactical Tasks if empty
-    cursor.execute("SELECT COUNT(*) as cnt FROM tasks")
-    if cursor.fetchone()["cnt"] == 0:
-        now_str = datetime.now().strftime("%Y-%m-%d")
-        default_tasks = [
-            ("t1", "Ice Bath / Cold Shock Therapy (42°F - 4 Mins)", "Fitness", now_str, 0, 0),
-            ("t2", "Heavy Push Compound Execution (Upper A Matrix)", "Fitness", now_str, 0, 0),
-            ("t3", "Deep Work Sprint (180 Mins Distributed Core)", "Discipline", now_str, 0, 0),
-            ("t4", "Weighted 45lb Ruck Walk — 10,000 Step Milestone", "Fitness", now_str, 0, 0),
-            ("t5", "10 Pages Hard Copy Strategic Reading + Zero Emissive Screens", "Mindset", now_str, 0, 0),
-        ]
-        cursor.executemany(
-            "INSERT INTO tasks (id, name, category, created_date, current_streak, longest_streak) VALUES (?, ?, ?, ?, ?, ?)",
-            default_tasks
+            "INSERT INTO user_progress (id, user_name, total_xp, current_level, badges_unlocked) VALUES ('main', 'Akash Ajith', 0, 1, '[]')"
         )
         conn.commit()
 

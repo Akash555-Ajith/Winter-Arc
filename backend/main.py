@@ -386,8 +386,10 @@ def get_progress():
     total_xp = row["total_xp"]
     badges = json.loads(row["badges_unlocked"])
     calc = calculate_level_from_xp(total_xp)
+    user_name = dict(row).get("user_name") or "Akash Ajith"
 
     return {
+        "user_name": user_name,
         "total_xp": total_xp,
         "current_level": calc["level"],
         "xp_in_level": calc["xp_in_level"],
@@ -396,6 +398,21 @@ def get_progress():
         "longest_global_streak": global_streaks["longest_streak"],
         "badges_unlocked": badges
     }
+
+@app.post("/api/reset")
+def reset_all_data():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM tasks")
+    cursor.execute("DELETE FROM daily_logs")
+    cursor.execute("DELETE FROM weight_entries")
+    cursor.execute("DELETE FROM photos")
+    cursor.execute(
+        "UPDATE user_progress SET total_xp = 0, current_level = 1, badges_unlocked = '[]', user_name = 'Akash Ajith' WHERE id = 'main'"
+    )
+    conn.commit()
+    conn.close()
+    return {"status": "success", "message": "All tasks and telemetry reset successfully!"}
 
 @app.get("/api/recap")
 def get_recap(days: int = 7):

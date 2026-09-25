@@ -51,6 +51,9 @@ export default function HeaderHud({ progress, dayNumber = 42, totalDays = 90 }) 
               DAY {dayNumber} / {totalDays}
             </span>
           </div>
+          <div className="text-xs font-bold text-cyan-hud font-mono tracking-widest uppercase mb-1">
+            OPERATOR: {progress?.user_name || 'AKASH AJITH'}
+          </div>
           <p className="text-xs text-silver-tactical max-w-2xl font-sans">
             Phase 2: Hyper-Trophy & Cognitive Hardening. Winter isolation threshold active. Zero compromise on caloric, kinetic, or deep work benchmarks.
           </p>

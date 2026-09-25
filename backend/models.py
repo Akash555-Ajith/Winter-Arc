@@ -39,6 +39,7 @@ class PhotoResponse(BaseModel):
     created_at: str
 
 class UserProgressResponse(BaseModel):
+    user_name: Optional[str] = "Akash Ajith"
     total_xp: int
     current_level: int
     xp_in_level: int

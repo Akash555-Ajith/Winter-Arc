@@ -264,7 +264,9 @@ export default function App() {
               <UserCheck className="w-4 h-4" />
             </div>
             <div className="overflow-hidden">
-              <div className="text-xs font-bold text-frost-white truncate">CADET OPERATOR</div>
+              <div className="text-xs font-bold text-frost-white truncate uppercase">
+                {progress?.user_name || 'AKASH AJITH'}
+              </div>
               <div className="text-[10px] text-cyan-hud font-mono truncate">
                 TITAN PROTOCOL | LVL {progress?.current_level || 1}
               </div>
