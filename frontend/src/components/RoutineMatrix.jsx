@@ -121,11 +121,17 @@ export default function RoutineMatrix({ tasks, logs, selectedDate, onToggleTask,
                   </span>
 
                   <button
-                    onClick={() => onDeleteTask(task.id)}
-                    className="text-silver-tactical hover:text-danger-cyber transition-colors p-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`Are you sure you want to delete "${task.name}"?`)) {
+                        onDeleteTask(task.id);
+                      }
+                    }}
+                    className="text-silver-tactical hover:text-red-400 hover:bg-red-500/10 transition-all p-1.5 rounded cursor-pointer"
                     title="Delete Task"
+                    aria-label={`Delete task ${task.name}`}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4 text-silver-tactical hover:text-red-400" />
                   </button>
                 </div>
               </div>

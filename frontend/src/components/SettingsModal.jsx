@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { exportDataJson, importDataJson } from '../services/api';
+import { exportDataJson, importDataJson, resetAllData } from '../services/api';
 import { Settings, Download, Upload, Bell, X, Check } from 'lucide-react';
 
 export default function SettingsModal({ isOpen, onClose, onRefreshData }) {
@@ -140,16 +140,16 @@ export default function SettingsModal({ isOpen, onClose, onRefreshData }) {
               onClick={async () => {
                 if (window.confirm("Are you sure you want to remove all tasks and reset everything for Akash Ajith?")) {
                   try {
-                    const { resetAllData } = await import('../services/api');
                     await resetAllData();
                     setStatusMsg("SYSTEM RESET COMPLETE! OPERATOR: AKASH AJITH");
-                    if (onRefreshData) onRefreshData();
+                    if (onRefreshData) await onRefreshData();
                   } catch (err) {
+                    console.error("Reset error:", err);
                     setStatusMsg("RESET FAILED: " + err.message);
                   }
                 }
               }}
-              className="px-4 py-2 bg-red-500/20 border border-red-500/50 hover:bg-red-500/30 text-red-400 font-mono text-xs font-bold rounded transition-all"
+              className="px-4 py-2 bg-red-500/20 border border-red-500/50 hover:bg-red-500/30 text-red-400 font-mono text-xs font-bold rounded transition-all cursor-pointer"
             >
               ⊕ RESET ALL DATA (START FRESH)
             </button>
