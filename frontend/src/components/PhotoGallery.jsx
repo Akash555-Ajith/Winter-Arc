@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
-import { Camera, Plus, Trash2, Sliders, Calendar, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Camera, Plus, Trash2, Sliders, Calendar, X, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function PhotoGallery({ photos, onUploadPhoto, onDeletePhoto }) {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showCompareModal, setShowCompareModal] = useState(false);
+
+  // Zoom / Lightbox State
+  const [zoomedPhoto, setZoomedPhoto] = useState(null);
 
   // Upload state
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -13,6 +16,17 @@ export default function PhotoGallery({ photos, onUploadPhoto, onDeletePhoto }) {
   // Comparison selection
   const [photoAId, setPhotoAId] = useState(photos.length > 0 ? photos[photos.length - 1]?.id : null);
   const [photoBId, setPhotoBId] = useState(photos.length > 0 ? photos[0]?.id : null);
+
+  // Keyboard Escape key handler to close zoom modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setZoomedPhoto(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -38,6 +52,21 @@ export default function PhotoGallery({ photos, onUploadPhoto, onDeletePhoto }) {
   const photoA = photos.find((p) => p.id === photoAId);
   const photoB = photos.find((p) => p.id === photoBId);
 
+  // Navigation inside Zoom Modal
+  const zoomedIndex = zoomedPhoto ? photos.findIndex((p) => p.id === zoomedPhoto.id) : -1;
+
+  const handlePrevZoom = () => {
+    if (zoomedIndex > 0) {
+      setZoomedPhoto(photos[zoomedIndex - 1]);
+    }
+  };
+
+  const handleNextZoom = () => {
+    if (zoomedIndex < photos.length - 1) {
+      setZoomedPhoto(photos[zoomedIndex + 1]);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Banner */}
@@ -52,7 +81,7 @@ export default function PhotoGallery({ photos, onUploadPhoto, onDeletePhoto }) {
               PHYSICAL TRANSFORMATION GALLERY
             </h2>
             <p className="text-xs text-silver-tactical max-w-2xl font-sans">
-              Log progress photos for specific dates to visually inspect physical transformation, conditioning, and physique benchmarks across your Winter Arc cycle.
+              Log progress photos for specific dates to visually inspect physical transformation, conditioning, and physique benchmarks across your Winter Arc cycle. Click any photo to view in high resolution.
             </p>
           </div>
 
@@ -86,20 +115,41 @@ export default function PhotoGallery({ photos, onUploadPhoto, onDeletePhoto }) {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {photos.map((photo) => (
-            <div key={photo.id} className="bg-deck hud-border rounded-xl overflow-hidden group">
-              <div className="relative h-64 bg-obsidian overflow-hidden">
+            <div
+              key={photo.id}
+              className="bg-deck hud-border rounded-xl overflow-hidden group border hover:border-cyan-hud/60 transition-all duration-300 shadow-md"
+            >
+              <div
+                onClick={() => setZoomedPhoto(photo)}
+                className="relative h-64 bg-obsidian overflow-hidden cursor-pointer"
+                title="Click to view full-size photo"
+              >
                 <img
                   src={photo.image_data}
                   alt={`Progress ${photo.date}`}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
+
+                {/* Hover Zoom Overlay */}
+                <div className="absolute inset-0 bg-obsidian/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                  <div className="px-3 py-1.5 bg-obsidian/80 backdrop-blur-md rounded-lg text-cyan-hud border border-cyan-hud/40 font-mono text-xs flex items-center gap-2 shadow-hud-glow">
+                    <ZoomIn className="w-4 h-4" />
+                    <span>CLICK TO ZOOM</span>
+                  </div>
+                </div>
+
                 <div className="absolute top-3 left-3 bg-obsidian/80 backdrop-blur-md px-2.5 py-1 rounded text-xs font-mono text-cyan-hud border border-cyan-hud/30 flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5" />
                   <span>{photo.date}</span>
                 </div>
 
                 <button
-                  onClick={() => onDeletePhoto(photo.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm(`Are you sure you want to delete the photo logged on ${photo.date}?`)) {
+                      onDeletePhoto(photo.id);
+                    }
+                  }}
                   className="absolute top-3 right-3 bg-danger-cyber/20 hover:bg-danger-cyber text-frost-white p-2 rounded transition-colors"
                   title="Delete Photo"
                 >
@@ -108,12 +158,97 @@ export default function PhotoGallery({ photos, onUploadPhoto, onDeletePhoto }) {
               </div>
 
               {photo.notes && (
-                <div className="p-4 bg-deck-light border-t border-cyan-hud/10 text-xs font-mono text-silver-tactical">
+                <div
+                  onClick={() => setZoomedPhoto(photo)}
+                  className="p-4 bg-deck-light border-t border-cyan-hud/10 text-xs font-mono text-silver-tactical cursor-pointer hover:text-frost-white transition-colors"
+                >
                   {photo.notes}
                 </div>
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Full-Screen Zoom Lightbox Modal */}
+      {zoomedPhoto && (
+        <div
+          className="fixed inset-0 bg-obsidian/95 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 z-50 animate-fade-in"
+          onClick={() => setZoomedPhoto(null)}
+        >
+          <div
+            className="bg-deck hud-border-glow rounded-xl max-w-5xl w-full p-4 sm:p-6 shadow-2xl relative flex flex-col max-h-[92vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-cyan-hud/20 font-mono">
+              <div className="flex items-center gap-2 text-xs text-cyan-hud font-bold">
+                <Calendar className="w-4 h-4" />
+                <span>TRANSFORMATION LOG • {zoomedPhoto.date}</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    if (window.confirm(`Delete progress photo logged on ${zoomedPhoto.date}?`)) {
+                      const idToDelete = zoomedPhoto.id;
+                      setZoomedPhoto(null);
+                      onDeletePhoto(idToDelete);
+                    }
+                  }}
+                  className="px-3 py-1 bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/30 rounded text-xs flex items-center gap-1.5 transition-all font-mono"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>DELETE</span>
+                </button>
+
+                <button
+                  onClick={() => setZoomedPhoto(null)}
+                  className="p-1.5 text-silver-tactical hover:text-frost-white bg-deck-light border border-cyan-hud/30 rounded-lg transition-colors"
+                  title="Close Zoom View"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Enlarged Image Display with Prev/Next Controls */}
+            <div className="relative flex-1 flex items-center justify-center bg-obsidian/90 rounded-lg overflow-hidden min-h-[300px] max-h-[72vh] p-2">
+              {zoomedIndex > 0 && (
+                <button
+                  onClick={handlePrevZoom}
+                  className="absolute left-3 p-3 bg-obsidian/80 text-cyan-hud hover:bg-cyan-hud hover:text-obsidian rounded-full border border-cyan-hud/40 shadow-hud-glow transition-all z-10"
+                  title="Previous Photo"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+              )}
+
+              <img
+                src={zoomedPhoto.image_data}
+                alt={`Transformation ${zoomedPhoto.date}`}
+                className="max-h-[70vh] w-auto max-w-full object-contain rounded transition-all duration-300 shadow-2xl"
+              />
+
+              {zoomedIndex < photos.length - 1 && (
+                <button
+                  onClick={handleNextZoom}
+                  className="absolute right-3 p-3 bg-obsidian/80 text-cyan-hud hover:bg-cyan-hud hover:text-obsidian rounded-full border border-cyan-hud/40 shadow-hud-glow transition-all z-10"
+                  title="Next Photo"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              )}
+            </div>
+
+            {/* Photo Notes Footer */}
+            {zoomedPhoto.notes && (
+              <div className="mt-3 p-3 bg-deck-light border border-cyan-hud/20 rounded-lg text-xs font-mono text-silver-tactical flex items-center gap-2">
+                <span className="text-cyan-hud font-bold uppercase">NOTES:</span>
+                <span>{zoomedPhoto.notes}</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -258,7 +393,12 @@ export default function PhotoGallery({ photos, onUploadPhoto, onDeletePhoto }) {
                   BEFORE: {photoA ? photoA.date : 'N/A'}
                 </div>
                 {photoA ? (
-                  <img src={photoA.image_data} alt="Before" className="h-80 w-full object-contain rounded" />
+                  <img
+                    src={photoA.image_data}
+                    alt="Before"
+                    className="h-80 w-full object-contain rounded cursor-pointer"
+                    onClick={() => setZoomedPhoto(photoA)}
+                  />
                 ) : (
                   <div className="h-80 flex items-center justify-center text-xs font-mono text-silver-tactical">
                     SELECT PHOTO A
@@ -271,7 +411,12 @@ export default function PhotoGallery({ photos, onUploadPhoto, onDeletePhoto }) {
                   AFTER: {photoB ? photoB.date : 'N/A'}
                 </div>
                 {photoB ? (
-                  <img src={photoB.image_data} alt="After" className="h-80 w-full object-contain rounded" />
+                  <img
+                    src={photoB.image_data}
+                    alt="After"
+                    className="h-80 w-full object-contain rounded cursor-pointer"
+                    onClick={() => setZoomedPhoto(photoB)}
+                  />
                 ) : (
                   <div className="h-80 flex items-center justify-center text-xs font-mono text-silver-tactical">
                     SELECT PHOTO B
