@@ -2,8 +2,20 @@
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❄️</text></svg>" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="alternate icon" type="image/png" href="/icon-192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#080c14" />
+    <meta name="description" content="Tactical 90-Day Discipline, Habit Tracking, Telemetry & Physical Transformation Ops HUD" />
+    
+    <!-- iOS / Safari PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Winter Arc" />
+    
     <title>WINTER ARC // TACTICAL OPS HUD</title>
     <!-- Google Fonts for Tactical Sci-Fi Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,5 +25,16 @@
   <body class="bg-obsidian text-frost-white font-mono antialiased selection:bg-cyan-hud selection:text-obsidian min-h-screen">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then((reg) => {
+            console.log('Winter Arc PWA Service Worker Registered!', reg.scope);
+          }).catch((err) => {
+            console.error('Service Worker registration failed:', err);
+          });
+        });
+      }
+    </script>
   </body>
 </html>

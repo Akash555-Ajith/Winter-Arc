@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { exportDataJson, importDataJson, resetAllData } from '../services/api';
-import { Settings, Download, Upload, Bell, X, Check } from 'lucide-react';
+import { Settings, Download, Upload, Bell, X, Check, Smartphone } from 'lucide-react';
 
-export default function SettingsModal({ isOpen, onClose, onRefreshData }) {
+export default function SettingsModal({ isOpen, onClose, onRefreshData, installPrompt, onInstallPWA }) {
   const [reminderTime, setReminderTime] = useState('20:00');
   const [reminderSaved, setReminderSaved] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
@@ -99,6 +99,36 @@ export default function SettingsModal({ isOpen, onClose, onRefreshData }) {
                 SAVE REMINDER
               </button>
             </div>
+          </div>
+
+          {/* PWA App Installation */}
+          <div className="p-4 bg-cyan-hud/10 border border-cyan-hud/30 rounded-lg">
+            <h4 className="text-sm font-bold font-mono text-cyan-hud uppercase mb-2 flex items-center gap-2">
+              <Smartphone className="w-4 h-4 text-cyan-hud" />
+              PROGRESSIVE WEB APP (PWA) PROTOCOL
+            </h4>
+            <p className="text-xs text-silver-tactical mb-3">
+              Install Winter Arc directly to your Mobile (iOS / Android) or Desktop home screen for a full-screen, native app experience with offline support.
+            </p>
+
+            {installPrompt ? (
+              <button
+                onClick={onInstallPWA}
+                className="px-4 py-2 bg-cyan-hud hover:bg-cyan-electric text-obsidian rounded font-mono text-xs font-black shadow-hud-glow transition-all flex items-center gap-2"
+              >
+                <Smartphone className="w-4 h-4" />
+                <span>INSTALL APP ON DEVICE NOW</span>
+              </button>
+            ) : (
+              <div className="text-[11px] font-mono text-silver-tactical bg-deck p-2.5 rounded border border-cyan-hud/20">
+                <span className="text-cyan-hud font-bold">INSTALL INSTRUCTIONS:</span>
+                <ul className="list-disc list-inside mt-1 space-y-1">
+                  <li><strong>Chrome / Edge / Desktop:</strong> Click the Install icon in the browser URL address bar or menu.</li>
+                  <li><strong>iPhone (iOS Safari):</strong> Tap Share button → Select <strong>"Add to Home Screen"</strong>.</li>
+                  <li><strong>Android Chrome:</strong> Tap Menu (⋮) → Select <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.</li>
+                </ul>
+              </div>
+            )}
           </div>
 
           {/* Backup & Restore */}

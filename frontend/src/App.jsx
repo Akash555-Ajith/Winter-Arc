@@ -20,7 +20,7 @@ import SettingsModal from './components/SettingsModal';
 
 import {
   LayoutDashboard, Flame, Dumbbell, Camera, ShieldCheck,
-  BarChart3, Award, Settings, UserCheck
+  BarChart3, Award, Settings, UserCheck, Smartphone
 } from 'lucide-react';
 
 export default function App() {
@@ -37,6 +37,27 @@ export default function App() {
   // Modal states
   const [levelUpLevel, setLevelUpLevel] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+
+  // PWA Install Prompt State
+  const [installPrompt, setInstallPrompt] = useState(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallPWA = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setInstallPrompt(null);
+    }
+  };
 
   useEffect(() => {
     loadAllData();
@@ -256,6 +277,16 @@ export default function App() {
               <span>HONOR CODES</span>
             </button>
 
+            {installPrompt && (
+              <button
+                onClick={handleInstallPWA}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded bg-cyan-hud/10 text-cyan-hud border border-cyan-hud/40 font-bold hover:bg-cyan-hud/20 transition-all animate-pulse shadow-hud-glow"
+              >
+                <Smartphone className="w-4 h-4 text-cyan-hud" />
+                <span>INSTALL APP ON DEVICE</span>
+              </button>
+            )}
+
             <button
               onClick={() => setShowSettings(true)}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-silver-tactical hover:text-frost-white hover:bg-deck-light transition-all"
@@ -373,6 +404,8 @@ export default function App() {
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
         onRefreshData={loadAllData}
+        installPrompt={installPrompt}
+        onInstallPWA={handleInstallPWA}
       />
     </div>
   );
